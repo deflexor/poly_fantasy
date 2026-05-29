@@ -80,3 +80,50 @@
 - [ ] ⏳ **Dark/light mode toggle**
 - [ ] ⏳ **Archive**: Show resolved events separately
 - [ ] ⏳ **Comparison**: Polymarket real price vs fantasy price
+---
+
+## Infrastructure
+
+- [x] ✅ **Cron sync**: `*/15 * * * *` — Rust binary syncs events + resolves bets
+- [x] ✅ **Rust sync bot**: Fetches Gamma API, upserts to Supabase REST, resolves bets
+- [ ] ⏳ **Email sending**: For email login codes
+- [ ] ⏳ **Custom domain**: Move from `poly-fantasy.vercel.app` to own domain
+
+### Betting
+
+- [x] ✅ **Bet resolution**: Auto-resolve when Polymarket settles: sync bot matches winner → updates bet status → awards winnings
+- [x] ✅ **RPC function**: `award_winnings()` in Supabase for atomic balance increments
+
+### Testing
+
+- [x] ✅ **Rust integration tests**: CRUD for events/profiles/bets, resolve YES wins, resolve NO wins
+- [x] ✅ **Frontend E2E tests**: Playwright — auth, search, category filter, bet placement, settings, navigation, no broken links
+- [ ] ⏳ **CI pipeline**: Run tests on push
+
+---
+
+## Polish
+
+- [ ] ⏳ **Loading states**: Better UX during data fetch
+- [ ] ⏳ **Error handling**: Toast/snackbar for errors
+- [ ] ⏳ **Mobile responsive**: Optimise for phones
+- [ ] ⏳ **PWA / install prompt**: Optional mobile app feel
+
+---
+
+## Backlog (nice to have)
+
+- [ ] ⏳ **Email login**: Persistent account via email + confirmation code
+- [ ] ⏳ **Profile page**: Show stats (balance, bets placed, win rate)
+- [ ] ⏳ **Dashboard sorting**: By volume, liquidity, spread, end date
+- [ ] ⏳ **Pagination**: For when events exceed viewport
+- [ ] ⏳ **Live updates**: Auto-refresh or polling for prices
+- [ ] ⏳ **Leaderboard**: Top players ranked by balance, win rate, ROI
+- [ ] ⏳ **i18n**: Multi-language (Russian, English)
+- [ ] ⏳ **Betting pools**: Show how many users bet each side
+- [ ] ⏳ **Notifications**: Telegram bot for event resolution
+- [ ] ⏳ **Referral links**: Share with friends, track who joined
+- [ ] ⏳ **Dark/light mode toggle**
+- [ ] ⏳ **Archive**: Show resolved events separately
+- [ ] ⏳ **Comparison**: Polymarket real price vs fantasy price
+- [ ] ⏳ **Prizes**: Optional — weekly winner shoutout
