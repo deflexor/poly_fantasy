@@ -5,7 +5,6 @@ const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 const headers = {
   'Content-Type': 'application/json',
   apikey: ANON_KEY,
-  Authorization: `Bearer ${ANON_KEY}`,
 }
 
 async function get<T>(path: string): Promise<T> {
@@ -75,17 +74,40 @@ export async function getEvent(id: string): Promise<Event> {
   return data[0]
 }
 
-// Auth (Supabase Auth)
-export function getSessionUser(): { id: string; email: string } | null {
-  const raw = localStorage.getItem('sb-session')
+// Username auth (no passwords, no OAuth)
+export async function login(username: string): Promise<{ user: { id: string; username: string } }> {
+  // Check if username exists
+  const existing = await get<Profile[]>(`profiles?username=eq.${encodeURIComponent(username)}&limit=1`)
+  if (existing.length > 0) {
+    return { user: { id: existing[0].id, username: existing[0].username } }
+  }
+  // Create new profile with starting balance
+  const created = await post<Profile[]>('profiles', {
+    username,
+    display_name: username,
+    balance: 1000000, // $10,000 play money
+  })
+  return { user: { id: created[0].id, username: created[0].username } }
+}
+
+export function storeUser(id: string, username: string) {
+  localStorage.setItem('polyfantasy_user', JSON.stringify({ id, username }))
+}
+
+export function getStoredUser(): { id: string; username: string } | null {
+  const raw = localStorage.getItem('polyfantasy_user')
   if (!raw) return null
   try {
-    const session = JSON.parse(raw)
-    return session?.user ? { id: session.user.id, email: session.user.email } : null
+    return JSON.parse(raw)
   } catch {
     return null
   }
 }
+
+export function clearUser() {
+  localStorage.removeItem('polyfantasy_user')
+}
+
 
 export function getProfile(userId: string): Promise<Profile> {
   return get<Profile[]>(`profiles?id=eq.${userId}&limit=1`).then(d => {
@@ -94,7 +116,6 @@ export function getProfile(userId: string): Promise<Profile> {
   })
 }
 
-// Bets
 export async function placeBet(
   userId: string,
   eventId: string,
