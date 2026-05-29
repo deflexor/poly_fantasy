@@ -188,7 +188,7 @@ export default function EventDetail() {
         ) : (
           <div className="border-t border-gray-800 pt-6 text-center">
             <p className="text-gray-400">
-              <a href="/auth" className="text-purple-400 hover:text-purple-300">Sign in</a> to place bets
+              Create an account to place bets
             </p>
           </div>
         )}

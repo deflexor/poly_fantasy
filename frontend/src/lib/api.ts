@@ -152,3 +152,12 @@ export async function getLeaderboard(): Promise<LeaderEntry[]> {
   // Simple version for now - just list users with balances
   return get<LeaderEntry[]>('leaderboard?order=balance.desc&limit=50')
 }
+
+export async function updateProfile(id: string, data: { username?: string }): Promise<void> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: { ...headers, Prefer: 'return=minimal' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error(await res.text().catch(() => 'Update failed'))
+}

@@ -14,7 +14,6 @@ function qualityBadge(q: string | null): string {
   switch (q) {
     case 'strong': return '🔥 Strong'
     case 'decent': return '👍 Decent'
-    case 'speculative': return '⚠️ Spec'
     default: return ''
   }
 }
@@ -23,6 +22,7 @@ export default function Dashboard() {
   const [events, setEvents] = useState<api.Event[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     loadEvents()
@@ -39,15 +39,17 @@ export default function Dashboard() {
     setLoading(false)
   }
 
-  const filtered = filter === 'all'
-    ? events
-    : events.filter(e => e.category === filter)
+  const filtered = events.filter(e => {
+    if (filter !== 'all' && e.category !== filter) return false
+    if (search && !e.question.toLowerCase().includes(search.toLowerCase())) return false
+    return true
+  })
 
   const categories = [...new Set(events.map(e => e.category).filter((c): c is string => c !== null))]
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-white">Polymarket Fantasy</h1>
           <p className="text-gray-400 mt-1">Predict events with play money. Compete with friends.</p>
@@ -55,6 +57,17 @@ export default function Dashboard() {
         <div className="text-right">
           <p className="text-sm text-gray-400">{events.length} active events</p>
         </div>
+      </div>
+
+      {/* Search */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search events…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full bg-gray-900 border border-gray-800 rounded-xl px-5 py-3 text-white text-sm outline-none focus:border-purple-500 transition"
+        />
       </div>
 
       {/* Category filter */}
@@ -132,7 +145,7 @@ export default function Dashboard() {
             </a>
           ))}
           {filtered.length === 0 && (
-            <p className="text-center text-gray-500 py-12">No events in this category.</p>
+            <p className="text-center text-gray-500 py-12">No events found.</p>
           )}
         </div>
       )}
