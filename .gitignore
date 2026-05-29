@@ -8,3 +8,4 @@ polyfantasy.db
 *.pyc
 supabase/.temp
 target/
+.vercel

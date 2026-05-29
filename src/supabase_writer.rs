@@ -91,4 +91,86 @@ impl SupabaseWriter {
         }
         Ok(())
     }
+
+    /// GET from Supabase REST, parses as JSON array
+    pub async fn get<T: serde::de::DeserializeOwned>(&self, path: &str) -> Result<Vec<T>> {
+        let url = format!("{}/{}", self.base_url, path);
+        let mut h = self.headers();
+        h.remove("prefer");
+        let resp = self.client
+            .get(&url)
+            .headers(h)
+            .send()
+            .await
+            .context(format!("GET {}", path))?;
+        let body = resp.text().await.context("read GET body")?;
+        serde_json::from_str(&body).context(format!("parse GET: {}..", &body[..body.len().min(60)]))
+    }
+
+    /// PATCH rows
+    pub async fn patch(&self, path: &str, body: serde_json::Value) -> Result<()> {
+        let url = format!("{}/{}", self.base_url, path);
+        let resp = self.client
+            .patch(&url)
+            .headers(self.headers())
+            .json(&body)
+            .send()
+            .await
+            .context(format!("PATCH {}", path))?;
+        if !resp.status().is_success() {
+            anyhow::bail!("PATCH {}: {} {}", path, resp.status(), resp.text().await.unwrap_or_default());
+        }
+        Ok(())
+    }
+
+    /// Find resolved events and resolve pending bets
+    /// Find resolved events and resolve pending bets
+    pub async fn resolve_bets(&self) -> Result<usize> {
+        #[derive(serde::Deserialize)]
+        struct ResolvedEvent { id: String, winner: Option<String> }
+
+        let events: Vec<ResolvedEvent> = self
+            .get("events?select=id,winner&resolved=eq.true&not.winner=is.null&limit=1000")
+            .await?;
+
+        #[derive(serde::Deserialize)]
+        struct PendingBet {
+            id: String, user_id: String, side: String, amount_cents: i64,
+        }
+
+        let mut n = 0usize;
+        for ev in &events {
+            let winner = match &ev.winner { Some(w) => w.to_lowercase(), None => continue };
+            let bets: Vec<PendingBet> = self
+                .get(&format!("bets?select=id,user_id,side,amount_cents&event_id=eq.{}&status=eq.pending&limit=1000", ev.id))
+                .await?;
+
+            for bet in &bets {
+                let won = (bet.side == "YES" && winner == "yes")
+                    || (bet.side == "NO" && winner == "no")
+                    || bet.side.to_lowercase() == winner;
+
+                self.patch(
+                    &format!("bets?id=eq.{}", bet.id),
+                    json!({"status": if won { "won" } else { "lost" }, "resolved_at": "now()"}),
+                ).await?;
+
+                if won {
+                    // Call Supabase RPC to add winnings to balance
+                    let url = format!("{}/rpc/award_winnings", self.base_url);
+                    let resp = self.client
+                        .post(&url)
+                        .headers(self.headers())
+                        .json(&json!({"p_id": bet.user_id, "p_amount": bet.amount_cents * 2}))
+                        .send()
+                        .await?;
+                    if !resp.status().is_success() {
+                        tracing::warn!("award_winnings failed for {}: {}", bet.user_id, resp.text().await.unwrap_or_default());
+                    }
+                }
+                n += 1;
+            }
+        }
+        Ok(n)
+    }
 }
