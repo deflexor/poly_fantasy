@@ -5,3 +5,6 @@ frontend/dist/
 frontend/.env
 *.swp
 polyfantasy.db
+*.pyc
+supabase/.temp
+target/
