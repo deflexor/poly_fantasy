@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import * as api from '../lib/api'
 
 function categoryColor(cat: string | null): string {
@@ -101,9 +102,9 @@ export default function Dashboard() {
       ) : (
         <div className="grid gap-3">
           {filtered.map(event => (
-            <a
+            <Link
               key={event.id}
-              href={`/events/${event.id}`}
+              to={`/events/${event.id}`}
               className="block bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-purple-700 transition group"
             >
               <div className="flex items-start justify-between gap-4">
@@ -142,7 +143,7 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-            </a>
+            </Link>
           ))}
           {filtered.length === 0 && (
             <p className="text-center text-gray-500 py-12">No events found.</p>
