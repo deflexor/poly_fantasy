@@ -1,40 +1,27 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
-import type { AuthSession } from '@supabase/supabase-js'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import * as api from '../lib/api'
 
 export default function Auth() {
   const navigate = useNavigate()
-  const [session, setSession] = useState<AuthSession | null>(null)
-  const [email, setEmail] = useState('')
-  const [sending, setSending] = useState(false)
+  const [username, setUsername] = useState('')
+  const [logging, setLogging] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      if (data.session) navigate('/')
-    })
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      if (session) navigate('/')
-    })
-    return () => listener?.subscription.unsubscribe()
+    if (api.getStoredUser()) navigate('/')
   }, [])
 
-  async function signInWithGoogle() {
-    await supabase.auth.signInWithOAuth({ provider: 'google' })
-  }
-
-  async function signInWithGitHub() {
-    await supabase.auth.signInWithOAuth({ provider: 'github' })
-  }
-
-  async function signInMagicLink() {
-    if (!email) return
-    setSending(true)
-    await supabase.auth.signInWithOtp({ email })
-    alert('Magic link sent! Check your email.')
-    setSending(false)
+  async function login() {
+    if (!username.trim()) return
+    setLogging(true)
+    try {
+      const { user } = await api.login(username.trim())
+      api.storeUser(user.id, user.username)
+      navigate('/')
+    } catch (e: any) {
+      alert(e.message)
+    }
+    setLogging(false)
   }
 
   return (
@@ -42,46 +29,31 @@ export default function Auth() {
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-white">Welcome</h1>
-          <p className="text-gray-400 text-sm mt-2">Sign in to start predicting</p>
+          <p className="text-gray-400 text-sm mt-2">Pick a username to start</p>
         </div>
 
-        <div className="space-y-3">
-          <button
-            onClick={signInWithGoogle}
-            className="w-full py-3 bg-white text-gray-900 rounded-xl font-semibold hover:bg-gray-100 transition"
-          >
-            Continue with Google
-          </button>
-          <button
-            onClick={signInWithGitHub}
-            className="w-full py-3 bg-gray-700 text-white rounded-xl font-semibold hover:bg-gray-600 transition"
-          >
-            Continue with GitHub
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3 my-6">
-          <div className="flex-1 h-px bg-gray-800" />
-          <span className="text-sm text-gray-500">or</span>
-          <div className="flex-1 h-px bg-gray-800" />
-        </div>
-
-        <div className="flex gap-2">
+        <div className="space-y-4">
           <input
-            type="email"
-            placeholder="your@email.com"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm"
+            type="text"
+            placeholder="Your username"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && login()}
+            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-5 py-3 text-white text-lg text-center outline-none focus:border-purple-500 transition"
+            autoFocus
           />
           <button
-            onClick={signInMagicLink}
-            disabled={!email || sending}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 disabled:bg-gray-700 disabled:text-gray-500 transition"
+            onClick={login}
+            disabled={!username.trim() || logging}
+            className="w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-xl font-semibold text-lg transition"
           >
-            {sending ? 'Sending…' : 'Magic Link'}
+            {logging ? 'Signing in…' : 'Start Playing'}
           </button>
         </div>
+
+        <p className="text-center text-xs text-gray-600 mt-6">
+          No password needed — play money only
+        </p>
       </div>
     </div>
   )

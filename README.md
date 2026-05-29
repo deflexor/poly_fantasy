@@ -1,43 +1,37 @@
-# Polymarket Fantasy
+# Polymarket Fantasy Sync Bot
 
-Play-money prediction market. Events synced from Polymarket, bets with virtual USDC.
+Fetches events from Polymarket and writes them to Supabase REST API.
 
-## Architecture
+## Setup (1 minute)
+
+### 1. Supabase — создать таблицы
+
+1. Зайди в [Supabase Dashboard](https://supabase.com/dashboard/project/vunkecnlysfuqlxnbqjq)
+2. **SQL Editor** → вставь содержимое `supabase/schema.sql` → **▶️ Run**
+3. **Authentication → Providers → Google** → Enable → Save
+
+### 2. Запустить синхронизацию
+
+```bash
+cp .env.example .env
+# Отредактируй SUPABASE_SERVICE_KEY — вставь полный service_role ключ
+# (Supabase Dashboard → Settings → API → service_role key)
+cargo run --release
+```
+
+Первая синхронизация загрузит ~10,000 активных маркетов.
+
+### 3. Поставить на cron (каждые 15 мин)
 
 ```
-Rust sync bot (local) → Supabase PostgreSQL ← React frontend (Vercel)
+*/15 * * * * cd /home/dfr/polyodds && ./target/release/polymarket-fantasy-sync 2>&1 | logger
 ```
 
-## Setup
-
-### 1. Supabase
-
-1. Create project at [supabase.com](https://supabase.com)
-2. Run `supabase/schema.sql` in SQL Editor
-3. Enable Google/GitHub auth in Authentication → Providers
-4. Copy Project URL and anon key
-
-### 2. Frontend
+### 4. Фронтенд
 
 ```bash
 cd frontend
 cp .env.example .env
-# Edit .env with your Supabase URL and anon key
-npm install
-npm run dev
-```
-
-Deploy to Vercel: `npx vercel --prod`
-
-### 3. Rust sync bot
-
-```bash
-cp .env.example .env
-# Edit .env with your Supabase DATABASE_URL
-cargo run --release
-```
-
-Run periodically via crontab:
-```
-*/30 * * * * cd /path/polyodds && cargo run --release 2>&1 | logger
+# Вставь Supabase URL и anon key
+npx vercel --prod
 ```

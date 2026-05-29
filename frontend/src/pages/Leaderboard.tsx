@@ -1,34 +1,15 @@
 import { useEffect, useState } from 'react'
-import { supabase, type LeaderboardEntry } from '../lib/supabase'
+import * as api from '../lib/api'
 
 export default function Leaderboard() {
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([])
+  const [entries, setEntries] = useState<api.LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase
-      .from('leaderboard')
-      .select('*, profiles:user_id(username, display_name, avatar_url)')
-      .order('profit_cents', { ascending: false })
-      .limit(50)
-      .then(({ data }) => {
-        if (data) {
-          const mapped: LeaderboardEntry[] = data.map((row: any) => ({
-            user_id: row.user_id,
-            total_bets: row.total_bets,
-            won_bets: row.won_bets,
-            win_rate: row.win_rate,
-            profit_cents: row.profit_cents,
-            roi: row.roi,
-            balance: row.balance,
-            username: row.profiles?.username,
-            display_name: row.profiles?.display_name,
-            avatar_url: row.profiles?.avatar_url,
-          }))
-          setEntries(mapped)
-        }
-        setLoading(false)
-      })
+    api.getLeaderboard().then(data => {
+      setEntries(data)
+      setLoading(false)
+    }).catch(() => setLoading(false))
   }, [])
 
   return (
@@ -61,13 +42,9 @@ export default function Leaderboard() {
                   <td className="px-5 py-3 text-gray-500 text-sm">#{i + 1}</td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
-                      {entry.avatar_url ? (
-                        <img src={entry.avatar_url} className="w-7 h-7 rounded-full" />
-                      ) : (
-                        <div className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center text-xs text-white font-bold">
-                          {(entry.display_name || entry.username || '?')[0].toUpperCase()}
-                        </div>
-                      )}
+                      <div className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center text-xs text-white font-bold">
+                        {(entry.display_name || entry.username || '?')[0].toUpperCase()}
+                      </div>
                       <span className="text-white font-medium text-sm">
                         {entry.display_name || entry.username || 'Anonymous'}
                       </span>
@@ -92,6 +69,13 @@ export default function Leaderboard() {
                   </td>
                 </tr>
               ))}
+              {entries.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="text-center text-gray-500 py-12">
+                    No bets yet — be the first!
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

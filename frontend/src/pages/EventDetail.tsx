@@ -1,65 +1,56 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { supabase, type Event, type Bet } from '../lib/supabase'
+import * as api from '../lib/api'
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [event, setEvent] = useState<Event | null>(null)
-  const [userBets, setUserBets] = useState<Bet[]>([])
+  const [event, setEvent] = useState<api.Event | null>(null)
+  const [userBets, setUserBets] = useState<api.Bet[]>([])
   const [selectedSide, setSelectedSide] = useState<'YES' | 'NO' | null>(null)
   const [amount, setAmount] = useState(10)
   const [placing, setPlacing] = useState(false)
-  const [session, setSession] = useState<any>(null)
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
-    return () => listener?.subscription.unsubscribe()
-  }, [])
+  const user = api.getStoredUser()
 
   useEffect(() => {
     if (!id) return
-    supabase.from('events').select('*').eq('id', id).single().then(({ data }) => {
-      if (data) setEvent(data as Event)
-    })
-    if (session?.user) {
-      supabase
-        .from('bets')
-        .select('*')
-        .eq('event_id', id)
-        .eq('user_id', session.user.id)
-        .then(({ data }) => {
-          if (data) setUserBets(data as Bet[])
-        })
+    loadEvent()
+  }, [id])
+
+  async function loadEvent() {
+    if (!id) return
+    try {
+      const data = await api.getEvent(id)
+      setEvent(data.event || data)
+    } catch (e) {
+      console.error('Failed to load event:', e)
     }
-  }, [id, session])
+    if (user) {
+      try {
+        const bets = await api.getUserBets(user.id)
+        setUserBets(bets.filter(b => b.event_id === id))
+      } catch {}
+    }
+  }
 
   async function placeBet() {
-    if (!session?.user || !id || !selectedSide || amount <= 0) return
+    if (!user || !id || !selectedSide || amount <= 0) return
     setPlacing(true)
-    const price = selectedSide === 'YES' ? event!.yes_price : event!.no_price
-    const { error } = await supabase.from('bets').insert({
-      user_id: session.user.id,
-      event_id: id,
-      side: selectedSide,
-      amount_cents: Math.floor(amount * 100),
-      odds_at_bet: price,
-    })
-    if (error) {
-      alert(error.message)
-    } else {
-      // Refresh bets
-      const { data } = await supabase
-        .from('bets')
-        .select('*')
-        .eq('event_id', id)
-        .eq('user_id', session.user.id)
-      if (data) setUserBets(data as Bet[])
+    try {
+      const bet = await api.placeBet(user.id, id, selectedSide, Math.floor(amount * 100))
+      // Refresh
+      const bets = await api.getUserBets(user.id)
+      setUserBets(bets.filter(b => b.event_id === id))
       setSelectedSide(null)
       setAmount(10)
+      // Refresh user balance
+      const stored = api.getStoredUser()
+      if (stored) {
+        const loginResp = await api.login(stored.username)
+        api.storeUser(loginResp.user.id, loginResp.user.username)
+      }
+    } catch (e: any) {
+      alert(e.message)
     }
     setPlacing(false)
   }
@@ -89,6 +80,16 @@ export default function EventDetail() {
           <span>{event.category || 'other'}</span>
           {event.subcategory && <><span>·</span><span>{event.subcategory}</span></>}
           {event.end_date && <><span>·</span><span>ends {new Date(event.end_date).toLocaleDateString()}</span></>}
+          {event.quality && (
+            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+              event.quality === 'strong' ? 'bg-orange-900/50 text-orange-400' :
+              event.quality === 'decent' ? 'bg-green-900/50 text-green-400' :
+              event.quality === 'speculative' ? 'bg-yellow-900/50 text-yellow-400' :
+              'bg-gray-800 text-gray-500'
+            }`}>
+              {event.quality}
+            </span>
+          )}
         </div>
 
         <h1 className="text-2xl font-bold text-white mb-8">{event.question}</h1>
@@ -128,7 +129,7 @@ export default function EventDetail() {
           <div className="bg-gray-800/50 rounded-lg p-3">
             <p className="text-gray-400">Spread</p>
             <p className="text-white font-semibold">
-              {event.spread !== null ? `${(event.spread * 100).toFixed(2)}%` : '—'}
+              {event.spread !== null && event.spread !== undefined ? `${(event.spread * 100).toFixed(2)}%` : '—'}
             </p>
           </div>
         </div>
@@ -139,7 +140,7 @@ export default function EventDetail() {
             <p className="text-yellow-400 font-semibold">Event Resolved</p>
             {event.winner && <p className="text-yellow-300 text-sm mt-1">Winner: {event.winner}</p>}
           </div>
-        ) : session ? (
+        ) : user ? (
           <div className="border-t border-gray-800 pt-6">
             <h3 className="text-white font-semibold mb-4">Place Your Bet</h3>
             <div className="flex gap-3 mb-4">

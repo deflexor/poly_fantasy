@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase, type Event } from '../lib/supabase'
+import * as api from '../lib/api'
 
 function categoryColor(cat: string | null): string {
   switch (cat) {
@@ -20,7 +20,7 @@ function qualityBadge(q: string | null): string {
 }
 
 export default function Dashboard() {
-  const [events, setEvents] = useState<Event[]>([])
+  const [events, setEvents] = useState<api.Event[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
 
@@ -30,13 +30,12 @@ export default function Dashboard() {
 
   async function loadEvents() {
     setLoading(true)
-    const { data } = await supabase
-      .from('events')
-      .select('*')
-      .eq('active', true)
-      .order('volume', { ascending: false })
-      .limit(100)
-    if (data) setEvents(data as Event[])
+    try {
+      const data = await api.listEvents()
+      setEvents(data)
+    } catch (e) {
+      console.error('Failed to load events:', e)
+    }
     setLoading(false)
   }
 
@@ -44,7 +43,7 @@ export default function Dashboard() {
     ? events
     : events.filter(e => e.category === filter)
 
-  const categories = [...new Set(events.map(e => e.category).filter(Boolean))]
+  const categories = [...new Set(events.map(e => e.category).filter((c): c is string => c !== null))]
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -55,7 +54,6 @@ export default function Dashboard() {
         </div>
         <div className="text-right">
           <p className="text-sm text-gray-400">{events.length} active events</p>
-          <p className="text-xs text-gray-500">Synced from Polymarket</p>
         </div>
       </div>
 
@@ -72,7 +70,7 @@ export default function Dashboard() {
         {categories.map(cat => (
           <button
             key={cat}
-            onClick={() => setFilter(cat!)}
+            onClick={() => setFilter(cat)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
               filter === cat ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
             }`}
@@ -104,7 +102,7 @@ export default function Dashboard() {
                     <span className={categoryColor(event.category)}>{event.category || 'other'}</span>
                     {event.subcategory && <span>· {event.subcategory}</span>}
                     {event.end_date && <span>· ends {new Date(event.end_date).toLocaleDateString()}</span>}
-                    {event.spread !== null && (
+                    {event.spread !== null && event.spread !== undefined && (
                       <span>· spread {(event.spread * 100).toFixed(1)}%</span>
                     )}
                   </div>
@@ -126,6 +124,9 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Vol: ${event.volume.toLocaleString()}</p>
+                  {event.quality && (
+                    <p className="text-xs mt-0.5">{qualityBadge(event.quality)}</p>
+                  )}
                 </div>
               </div>
             </a>

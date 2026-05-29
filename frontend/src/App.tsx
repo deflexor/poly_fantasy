@@ -1,21 +1,18 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Dashboard from './pages/Dashboard'
 import EventDetail from './pages/EventDetail'
 import Auth from './pages/Auth'
 import Leaderboard from './pages/Leaderboard'
-import { supabase } from './lib/supabase'
+import * as api from './lib/api'
 
 function App() {
-  const [session, setSession] = useState<any>(null)
+  const [user, setUser] = useState(api.getStoredUser())
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
-    return () => listener?.subscription.unsubscribe()
-  }, [])
+  function handleSignOut() {
+    api.clearUser()
+    setUser(null)
+  }
 
   return (
     <BrowserRouter>
@@ -25,19 +22,17 @@ function App() {
           <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
             <div className="flex items-center gap-6">
               <Link to="/" className="text-white font-bold text-lg">
-                Polymarket Fantasy
+                🏅 PolyFantasy
               </Link>
               <Link to="/" className="text-gray-400 hover:text-white text-sm transition">Events</Link>
               <Link to="/leaderboard" className="text-gray-400 hover:text-white text-sm transition">Leaderboard</Link>
             </div>
             <div>
-              {session ? (
+              {user ? (
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-400">
-                    {session.user.email?.split('@')[0] || 'Player'}
-                  </span>
+                  <span className="text-sm text-gray-400">{user.username}</span>
                   <button
-                    onClick={() => supabase.auth.signOut()}
+                    onClick={handleSignOut}
                     className="text-sm text-gray-500 hover:text-white transition"
                   >
                     Sign out
