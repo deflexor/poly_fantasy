@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import * as api from '../lib/api'
 
 export default function Leaderboard() {
-  const [entries, setEntries] = useState<api.LeaderboardEntry[]>([])
+  const [entries, setEntries] = useState<api.LeaderEntry[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

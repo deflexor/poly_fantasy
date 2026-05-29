@@ -138,6 +138,8 @@ export async function getUserBets(userId: string): Promise<Bet[]> {
 
 // Leaderboard (will need a view for this)
 export type LeaderEntry = {
+  display_name?: string
+  roi: number
   user_id: string
   username: string
   profit_cents: number

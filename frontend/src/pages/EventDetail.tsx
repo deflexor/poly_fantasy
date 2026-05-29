@@ -21,7 +21,7 @@ export default function EventDetail() {
     if (!id) return
     try {
       const data = await api.getEvent(id)
-      setEvent(data.event || data)
+      setEvent(data)
     } catch (e) {
       console.error('Failed to load event:', e)
     }
@@ -37,7 +37,7 @@ export default function EventDetail() {
     if (!user || !id || !selectedSide || amount <= 0) return
     setPlacing(true)
     try {
-      const bet = await api.placeBet(user.id, id, selectedSide, Math.floor(amount * 100))
+      await api.placeBet(user.id, id, selectedSide, Math.floor(amount * 100))
       // Refresh
       const bets = await api.getUserBets(user.id)
       setUserBets(bets.filter(b => b.event_id === id))
