@@ -1,5 +1,5 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
 import Dashboard from './pages/Dashboard'
 import EventDetail from './pages/EventDetail'
 import Settings from './pages/Settings'
@@ -14,12 +14,31 @@ function AppInner() {
   const toastCtx = useToast()
   const { t, locale, setLocale, locales } = useLocale()
   const [user, setUser] = useState(api.getStoredUser())
+  const [balance, setBalance] = useState<number | null>(null)
+  const [pnl, setPnl] = useState<api.PnlSummary | null>(null)
+  const location = useLocation()
 
+  // Auto-create user on mount
   useEffect(() => {
     if (!user) {
       autoCreateUser()
     }
   }, [])
+
+  // Refresh balance/PnL when user changes or navigating
+  useEffect(() => {
+    if (user) {
+      refreshUserData()
+    }
+  }, [user?.id, location.pathname])
+
+  // Refresh balance also when coming back from EventDetail (bet placed)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (user) refreshUserData()
+    }, 30000) // every 30s
+    return () => clearInterval(interval)
+  }, [user?.id])
 
   async function autoCreateUser() {
     let nick = generateNickname()
@@ -32,10 +51,25 @@ function AppInner() {
     }
   }
 
+  async function refreshUserData() {
+    if (!user) return
+    try {
+      const [b, p] = await Promise.all([
+        api.getUserBalance(user.id),
+        api.getUserPnl(user.id),
+      ])
+      setBalance(b)
+      setPnl(p)
+    } catch {
+      // Silently fail
+    }
+  }
+
   function handleSignOut() {
     api.clearUser()
     setUser(null)
-    // Will auto-create new user via useEffect
+    setBalance(null)
+    setPnl(null)
     autoCreateUser()
   }
 
@@ -44,6 +78,12 @@ function AppInner() {
     registerGlobalToast(toastCtx.addToast)
   }, [])
 
+  function formatMoney(cents: number): string {
+    const abs = Math.abs(cents)
+    const sign = cents < 0 ? '-' : ''
+    return `${sign}$${(abs / 100).toFixed(2)}`
+  }
+
   return (
     <div className="min-h-screen bg-gray-950">
       <ToastList />
@@ -51,15 +91,15 @@ function AppInner() {
       <nav className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-2 sm:px-4 h-14 flex items-center justify-between gap-2">
           <div className="flex items-center gap-6">
-            <Link to="/" className="text-white font-bold text-lg">
+            <Link to="/" className="text-white font-bold text-lg whitespace-nowrap">
               🏅 PolyFantasy
             </Link>
             <Link to="/" className="text-gray-400 hover:text-white text-sm transition">Events</Link>
             <Link to="/leaderboard" className="text-gray-400 hover:text-white text-sm transition">Leaderboard</Link>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {/* Language switcher */}
-            <div className="flex gap-0.5 mr-2 border border-gray-800 rounded-lg overflow-hidden text-xs">
+            <div className="hidden sm:flex gap-0.5 mr-1 border border-gray-800 rounded-lg overflow-hidden text-xs">
               {locales.map(l => (
                 <button
                   key={l.code}
@@ -74,6 +114,22 @@ function AppInner() {
             </div>
             {user ? (
               <div className="flex items-center gap-3">
+                {/* Balance */}
+                {balance !== null && (
+                  <span className="text-sm text-green-400 font-semibold whitespace-nowrap">
+                    {formatMoney(balance)}
+                  </span>
+                )}
+                {/* P&L quick */}
+                {pnl && pnl.total_bets > 0 && (
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    pnl.profit_cents >= 0
+                      ? 'bg-green-900/40 text-green-400'
+                      : 'bg-red-900/40 text-red-400'
+                  }`}>
+                    {pnl.profit_cents >= 0 ? '+' : ''}{formatMoney(pnl.profit_cents)}
+                  </span>
+                )}
                 <Link to="/settings" className="text-sm text-gray-400 hover:text-white transition">
                   {user.username}
                 </Link>

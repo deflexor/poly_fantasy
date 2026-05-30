@@ -9,16 +9,33 @@ export default function EventDetail() {
   const navigate = useNavigate()
   const [event, setEvent] = useState<api.Event | null>(null)
   const [userBets, setUserBets] = useState<api.Bet[]>([])
-  const [selectedSide, setSelectedSide] = useState<'YES' | 'NO' | null>(null)
-  const [amount, setAmount] = useState(10)
-  const [placing, setPlacing] = useState(false)
+  const [yesAmount, setYesAmount] = useState(10)
+  const [noAmount, setNoAmount] = useState(10)
+  const [placingYes, setPlacingYes] = useState(false)
+  const [placingNo, setPlacingNo] = useState(false)
   const [pool, setPool] = useState<{ yes: number; no: number } | null>(null)
+  const [balance, setBalance] = useState<number | null>(null)
+  const [pnl, setPnl] = useState<api.PnlSummary | null>(null)
+  const [error, setError] = useState('')
   const user = api.getStoredUser()
 
   useEffect(() => {
     if (!id) return
     loadEvent()
+    loadUserData()
   }, [id])
+
+  async function loadUserData() {
+    if (!user) return
+    try {
+      const [b, p] = await Promise.all([
+        api.getUserBalance(user.id),
+        api.getUserPnl(user.id),
+      ])
+      setBalance(b)
+      setPnl(p)
+    } catch {}
+  }
 
   async function loadEvent() {
     if (!id) return
@@ -34,33 +51,37 @@ export default function EventDetail() {
         setUserBets(bets.filter(b => b.event_id === id))
       } catch {}
     }
-    // Load bet pool
     try {
       const p = await api.getBetPool(id)
       setPool(p)
     } catch {}
   }
 
-  async function placeBet() {
-    if (!user || !id || !selectedSide || amount <= 0) return
+  async function placeBet(side: 'YES' | 'NO') {
+    if (!user || !id) return
+    const amount = side === 'YES' ? yesAmount : noAmount
+    if (amount <= 0) return
+    setError('')
+    const setPlacing = side === 'YES' ? setPlacingYes : setPlacingNo
     setPlacing(true)
     try {
-      await api.placeBet(user.id, id, selectedSide, Math.floor(amount * 100))
-      // Refresh
-      const bets = await api.getUserBets(user.id)
-      setUserBets(bets.filter(b => b.event_id === id))
-      setSelectedSide(null)
-      setAmount(10)
-      // Refresh user balance
-      const stored = api.getStoredUser()
-      if (stored) {
-        const loginResp = await api.login(stored.username)
-        api.storeUser(loginResp.user.id, loginResp.user.username)
-      }
+      await api.placeBet(user.id, id, side, Math.floor(amount * 100))
+      // Refresh everything
+      await loadEvent()
+      await loadUserData()
+      // Reset amount
+      if (side === 'YES') setYesAmount(10)
+      else setNoAmount(10)
     } catch (e: any) {
-      alert(e.message)
+      setError(e.message || 'Failed to place bet')
     }
     setPlacing(false)
+  }
+
+  function formatMoney(cents: number): string {
+    const abs = Math.abs(cents)
+    const sign = cents < 0 ? '-' : ''
+    return `${sign}$${(abs / 100).toFixed(2)}`
   }
 
   if (!event) {
@@ -84,7 +105,7 @@ export default function EventDetail() {
       </button>
 
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+        <div className="flex items-center gap-2 text-sm text-gray-500 mb-3 flex-wrap">
           <span>{event.category || 'other'}</span>
           {event.subcategory && <><span>·</span><span>{event.subcategory}</span></>}
           {event.end_date && <><span>·</span><span>ends {new Date(event.end_date).toLocaleDateString()}</span></>}
@@ -102,30 +123,111 @@ export default function EventDetail() {
 
         <h1 className="text-2xl font-bold text-white mb-8">{event.question}</h1>
 
-        {/* Price display */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <div className="bg-gray-800 rounded-xl p-6 text-center">
-            <p className="text-sm text-gray-400 mb-1">YES</p>
-            <p className="text-4xl font-bold text-green-400">
-              {(event.yes_price * 100).toFixed(1)}¢
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              {event.yes_price > 0 ? `Pays ${(1 / event.yes_price).toFixed(1)}x` : '—'}
-            </p>
+        {/* Price + Bet cards side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* YES card */}
+          <div className="bg-gray-800 rounded-xl p-5">
+            <div className="text-center mb-3">
+              <p className="text-sm text-gray-400 mb-1">YES</p>
+              <p className="text-3xl font-bold text-green-400">
+                {(event.yes_price * 100).toFixed(1)}¢
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {event.yes_price > 0 ? `Pays ${(1 / event.yes_price).toFixed(1)}x` : '—'}
+              </p>
+            </div>
+            {!isResolved && user && (
+              <div className="flex gap-2 items-center">
+                <div className="flex-1">
+                  <input
+                    type="number"
+                    min={1}
+                    value={yesAmount}
+                    onChange={e => setYesAmount(Number(e.target.value))}
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
+                    placeholder={t('bet.amount')}
+                  />
+                </div>
+                <button
+                  onClick={() => placeBet('YES')}
+                  disabled={yesAmount <= 0 || placingYes}
+                  className="px-5 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-semibold text-sm transition whitespace-nowrap"
+                >
+                  {placingYes ? '…' : `Bet YES ${formatMoney(yesAmount * 100)}`}
+                </button>
+              </div>
+            )}
           </div>
-          <div className="bg-gray-800 rounded-xl p-6 text-center">
-            <p className="text-sm text-gray-400 mb-1">NO</p>
-            <p className="text-4xl font-bold text-red-400">
-              {(event.no_price * 100).toFixed(1)}¢
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              {event.no_price > 0 ? `Pays ${(1 / event.no_price).toFixed(1)}x` : '—'}
-            </p>
+
+          {/* NO card */}
+          <div className="bg-gray-800 rounded-xl p-5">
+            <div className="text-center mb-3">
+              <p className="text-sm text-gray-400 mb-1">NO</p>
+              <p className="text-3xl font-bold text-red-400">
+                {(event.no_price * 100).toFixed(1)}¢
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {event.no_price > 0 ? `Pays ${(1 / event.no_price).toFixed(1)}x` : '—'}
+              </p>
+            </div>
+            {!isResolved && user && (
+              <div className="flex gap-2 items-center">
+                <div className="flex-1">
+                  <input
+                    type="number"
+                    min={1}
+                    value={noAmount}
+                    onChange={e => setNoAmount(Number(e.target.value))}
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
+                    placeholder={t('bet.amount')}
+                  />
+                </div>
+                <button
+                  onClick={() => placeBet('NO')}
+                  disabled={noAmount <= 0 || placingNo}
+                  className="px-5 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-semibold text-sm transition whitespace-nowrap"
+                >
+                  {placingNo ? '…' : `Bet NO ${formatMoney(noAmount * 100)}`}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
+        {/* Balance + error */}
+        {user && balance !== null && (
+          <div className="flex items-center justify-between mb-4 text-sm">
+            <div className="flex items-center gap-4 flex-wrap">
+              <span className="text-gray-400">
+                {t('profile.balance')}: <span className="text-white font-semibold">{formatMoney(balance)}</span>
+              </span>
+              {pnl && pnl.total_bets > 0 && (
+                <>
+                  <span className="text-gray-600">·</span>
+                  <span className="text-gray-400">
+                    P&L: <span className={pnl.profit_cents >= 0 ? 'text-green-400 font-semibold' : 'text-red-400 font-semibold'}>
+                      {pnl.profit_cents >= 0 ? '+' : ''}{formatMoney(pnl.profit_cents)}
+                    </span>
+                  </span>
+                  <span className="text-gray-600">·</span>
+                  <span className="text-gray-400">
+                    {pnl.wins}W / {pnl.losses}L
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Error message */}
+        {error && (
+          <div className="mb-4 bg-red-900/30 border border-red-700/50 rounded-xl p-3 text-red-400 text-sm">
+            {error}
+          </div>
+        )}
+
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-3 mb-8 text-center text-sm">
+        <div className="grid grid-cols-4 gap-3 mb-6 text-center text-sm">
           <div className="bg-gray-800/50 rounded-lg p-3">
             <p className="text-gray-400">Volume</p>
             <p className="text-white font-semibold">${event.volume.toLocaleString()}</p>
@@ -150,59 +252,17 @@ export default function EventDetail() {
           </div>
         </div>
 
-        {/* Betting */}
-        {isResolved ? (
-          <div className="bg-yellow-900/30 border border-yellow-700/50 rounded-xl p-4 text-center">
+        {/* Resolved banner */}
+        {isResolved && (
+          <div className="bg-yellow-900/30 border border-yellow-700/50 rounded-xl p-4 text-center mb-6">
             <p className="text-yellow-400 font-semibold">{t('event.detail.resolved')}</p>
             {event.winner && <p className="text-yellow-300 text-sm mt-1">{t('event.detail.winner')}: {event.winner}</p>}
           </div>
-        ) : user ? (
-          <div className="border-t border-gray-800 pt-6">
-            <h3 className="text-white font-semibold mb-4">{t('bet.place')}</h3>
-            <div className="flex gap-3 mb-4">
-              <button
-                onClick={() => setSelectedSide('YES')}
-                className={`flex-1 py-3 rounded-xl font-semibold text-lg transition ${
-                  selectedSide === 'YES'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                }`}
-              >
-                YES
-              </button>
-              <button
-                onClick={() => setSelectedSide('NO')}
-                className={`flex-1 py-3 rounded-xl font-semibold text-lg transition ${
-                  selectedSide === 'NO'
-                    ? 'bg-red-600 text-white'
-                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                }`}
-              >
-                NO
-              </button>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <label className="text-sm text-gray-400 mb-1 block">Amount ($ play money)</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={amount}
-                  onChange={e => setAmount(Number(e.target.value))}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                />
-              </div>
-              <button
-                onClick={placeBet}
-                disabled={!selectedSide || amount <= 0 || placing}
-                className="mt-5 px-8 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-semibold transition"
-              >
-                {placing ? 'Placing…' : 'Bet'}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="border-t border-gray-800 pt-6 text-center">
+        )}
+
+        {/* No user prompt */}
+        {!user && !isResolved && (
+          <div className="text-center py-6">
             <p className="text-gray-400">
               Create an account to place bets
             </p>
@@ -211,7 +271,7 @@ export default function EventDetail() {
 
         {/* User's bets */}
         {userBets.length > 0 && (
-          <div className="border-t border-gray-800 pt-6 mt-6">
+          <div className="border-t border-gray-800 pt-6">
             <h3 className="text-white font-semibold mb-3">{t('bet.your_bets')}</h3>
             <div className="space-y-2">
               {userBets.map(bet => (

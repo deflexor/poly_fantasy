@@ -123,14 +123,61 @@ export async function placeBet(
   side: string,
   amount_cents: number,
 ): Promise<Bet> {
-  const data = await post<Bet[]>('bets', {
-    user_id: userId,
-    event_id: eventId,
-    side,
-    amount_cents,
-    odds_at_bet: 0, // will be calculated server-side
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/place_bet`, {
+    method: 'POST',
+    headers: { ...headers },
+    body: JSON.stringify({
+      p_user_id: userId,
+      p_event_id: eventId,
+      p_side: side,
+      p_amount_cents: amount_cents,
+    }),
   })
-  return data[0]
+  if (!res.ok) {
+    const text = await res.text().catch(() => 'Server error')
+    throw new Error(text)
+  }
+  return res.json()
+}
+
+export async function getUserBalance(userId: string): Promise<number> {
+  const data = await get<Profile[]>(`profiles?id=eq.${userId}&select=balance&limit=1`)
+  if (!data.length) throw new Error('Profile not found')
+  return data[0].balance
+}
+
+export interface PnlSummary {
+  total_bets: number
+  wins: number
+  losses: number
+  profit_cents: number // positive = profit, negative = loss
+  total_staked_cents: number
+}
+
+export async function getUserPnl(userId: string): Promise<PnlSummary> {
+  const bets = await get<Bet[]>(`bets?user_id=eq.${userId}&select=status,amount_cents,odds_at_bet`)
+  const resolved = bets.filter(b => b.status === 'won' || b.status === 'lost')
+  let profit_cents = 0
+  let total_staked_cents = 0
+  for (const b of resolved) {
+    total_staked_cents += b.amount_cents
+    if (b.status === 'won') {
+      // Won: profit = amount_cents * 2 - amount_cents (payout - stake)
+      // Actually on Polymarket-style: you stake amount_cents, if you win you get 2x back
+      profit_cents += b.amount_cents // you get stake back + equal profit = 2x
+    } else {
+      profit_cents -= b.amount_cents
+    }
+  }
+  const wins = bets.filter(b => b.status === 'won').length
+  const losses = bets.filter(b => b.status === 'lost').length
+  return {
+    total_bets: bets.length,
+    wins,
+    losses,
+    profit_cents,
+    total_staked_cents,
+  }
 }
 
 export async function getUserBets(userId: string): Promise<Bet[]> {

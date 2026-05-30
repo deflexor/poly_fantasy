@@ -73,3 +73,51 @@ CREATE TABLE bets (
 
 -- No RLS — auth is handled by the app layer (username-based)
 -- Tables are public read/write via anon key
+
+-- Place bet: atomically deduct balance + insert bet
+CREATE OR REPLACE FUNCTION place_bet(
+  p_user_id UUID,
+  p_event_id TEXT,
+  p_side TEXT,
+  p_amount_cents BIGINT
+) RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+DECLARE
+  v_balance BIGINT;
+  v_odds DOUBLE PRECISION;
+  v_bet JSONB;
+BEGIN
+  -- Lock user row and check balance
+  SELECT balance INTO v_balance FROM profiles WHERE id = p_user_id FOR UPDATE;
+  IF v_balance < p_amount_cents THEN
+    RAISE EXCEPTION 'Insufficient balance. You have $%', (v_balance / 100)::numeric(10,2);
+  END IF;
+
+  -- Get current odds for the side
+  IF p_side = 'YES' THEN
+    SELECT yes_price INTO v_odds FROM events WHERE id = p_event_id;
+  ELSE
+    SELECT no_price INTO v_odds FROM events WHERE id = p_event_id;
+  END IF;
+
+  -- Deduct balance
+  UPDATE profiles SET balance = balance - p_amount_cents WHERE id = p_user_id;
+
+  -- Insert bet with current odds
+  INSERT INTO bets (user_id, event_id, side, amount_cents, odds_at_bet)
+  VALUES (p_user_id, p_event_id, p_side, p_amount_cents, v_odds)
+  RETURNING jsonb_build_object(
+    'id', id,
+    'user_id', user_id,
+    'event_id', event_id,
+    'side', side,
+    'amount_cents', amount_cents,
+    'odds_at_bet', odds_at_bet,
+    'status', status,
+    'created_at', created_at
+  ) INTO v_bet;
+
+  RETURN v_bet;
+END;
+$$;
