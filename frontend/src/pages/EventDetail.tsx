@@ -12,6 +12,7 @@ export default function EventDetail() {
   const [selectedSide, setSelectedSide] = useState<'YES' | 'NO' | null>(null)
   const [amount, setAmount] = useState(10)
   const [placing, setPlacing] = useState(false)
+  const [pool, setPool] = useState<{ yes: number; no: number } | null>(null)
   const user = api.getStoredUser()
 
   useEffect(() => {
@@ -33,6 +34,11 @@ export default function EventDetail() {
         setUserBets(bets.filter(b => b.event_id === id))
       } catch {}
     }
+    // Load bet pool
+    try {
+      const p = await api.getBetPool(id)
+      setPool(p)
+    } catch {}
   }
 
   async function placeBet() {
@@ -119,7 +125,7 @@ export default function EventDetail() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-8 text-center text-sm">
+        <div className="grid grid-cols-4 gap-3 mb-8 text-center text-sm">
           <div className="bg-gray-800/50 rounded-lg p-3">
             <p className="text-gray-400">Volume</p>
             <p className="text-white font-semibold">${event.volume.toLocaleString()}</p>
@@ -132,6 +138,14 @@ export default function EventDetail() {
             <p className="text-gray-400">Spread</p>
             <p className="text-white font-semibold">
               {event.spread !== null && event.spread !== undefined ? `${(event.spread * 100).toFixed(2)}%` : '—'}
+            </p>
+          </div>
+          <div className="bg-gray-800/50 rounded-lg p-3">
+            <p className="text-gray-400">Pool</p>
+            <p className="text-white font-semibold text-xs">
+              {pool ? (
+                <><span className="text-green-400">{pool.yes}</span> Y · <span className="text-red-400">{pool.no}</span> N</>
+              ) : '—'}
             </p>
           </div>
         </div>

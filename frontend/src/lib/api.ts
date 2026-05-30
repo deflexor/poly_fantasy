@@ -188,3 +188,13 @@ export async function verifyLoginCode(email: string, code: string): Promise<{ ok
   if (p.login_code_expires && new Date(p.login_code_expires) < new Date()) return { ok: false, user: { id: '', username: '' } }
   return { ok: true, user: { id: p.id, username: p.username } }
 }
+
+/** Count bets per side for an event */
+export async function getBetPool(eventId: string): Promise<{ yes: number; no: number }> {
+  const bets = await get<Bet[]>(`bets?select=side&event_id=eq.${eventId}`)
+  const yes = bets.filter(b => b.side === 'YES').length
+  const no = bets.filter(b => b.side === 'NO').length
+  return { yes, no }
+}
+
+/** Count bets per side for an event */

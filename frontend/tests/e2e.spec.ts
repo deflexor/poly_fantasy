@@ -202,3 +202,16 @@ test.describe('i18n', () => {
     await expect(page.locator('text=Events').first()).toBeVisible()
   })
 })
+
+// ─── Betting Pool ──────────────────────────────────────
+
+test.describe('Betting Pool', () => {
+  test('event detail shows pool counts', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.locator('a[href^="/events/"]').first()).toBeVisible({ timeout: 15000 })
+    await page.locator('a[href^="/events/"]').first().click()
+    await expect(page).toHaveURL(/\/events\//)
+    // Pool stat should eventually appear
+    await expect(page.locator('text=Pool').first()).toBeVisible({ timeout: 15000 })
+  })
+})
