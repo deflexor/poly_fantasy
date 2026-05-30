@@ -123,21 +123,33 @@ export async function placeBet(
   side: string,
   amount_cents: number,
 ): Promise<Bet> {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/place_bet`, {
-    method: 'POST',
-    headers: { ...headers },
-    body: JSON.stringify({
-      p_user_id: userId,
-      p_event_id: eventId,
-      p_side: side,
-      p_amount_cents: amount_cents,
-    }),
-  })
-  if (!res.ok) {
-    const text = await res.text().catch(() => 'Server error')
-    throw new Error(text)
+  // Step 1: check + deduct balance
+  const profile = await get<Profile[]>(`profiles?id=eq.${userId}&limit=1`)
+  if (!profile.length) throw new Error('Profile not found')
+  if (profile[0].balance < amount_cents) {
+    throw new Error(`Insufficient balance. You have $${(profile[0].balance / 100).toFixed(2)}`)
   }
-  return res.json()
+  const deductRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+    method: 'PATCH',
+    headers: { ...headers, Prefer: 'return=minimal' },
+    body: JSON.stringify({ balance: profile[0].balance - amount_cents }),
+  })
+  if (!deductRes.ok) {
+    throw new Error('Failed to deduct balance: ' + await deductRes.text().catch(() => ''))
+  }
+
+  // Step 2: get current odds and insert bet
+  const eventData = await get<Event[]>(`events?id=eq.${eventId}&limit=1`)
+  const odds = side === 'YES' ? eventData[0]?.yes_price ?? 0.5 : eventData[0]?.no_price ?? 0.5
+
+  const created = await post<Bet[]>('bets', {
+    user_id: userId,
+    event_id: eventId,
+    side,
+    amount_cents,
+    odds_at_bet: odds,
+  })
+  return created[0]
 }
 
 export async function getUserBalance(userId: string): Promise<number> {
