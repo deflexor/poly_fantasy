@@ -92,7 +92,7 @@ export default function Settings() {
       {profile && (
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-4">
           <h2 className="text-white font-semibold mb-3">{t('profile.stats')}</h2>
-          <div className="grid grid-cols-3 gap-3 text-center">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-center">
             <div className="bg-gray-800 rounded-xl p-3">
               <p className="text-2xl font-bold text-green-400">${(profile.balance / 100).toFixed(2)}</p>
               <p className="text-xs text-gray-400 mt-1">{t('profile.balance')}</p>

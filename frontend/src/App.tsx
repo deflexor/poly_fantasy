@@ -49,7 +49,7 @@ function AppInner() {
       <ToastList />
       {/* Nav */}
       <nav className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-2 sm:px-4 h-14 flex items-center justify-between gap-2">
           <div className="flex items-center gap-6">
             <Link to="/" className="text-white font-bold text-lg">
               🏅 PolyFantasy

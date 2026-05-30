@@ -25,7 +25,7 @@ export default function Leaderboard() {
           <p className="text-gray-400">Loading…</p>
         </div>
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-800 text-left text-sm text-gray-500">

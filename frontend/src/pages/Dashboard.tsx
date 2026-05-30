@@ -101,7 +101,7 @@ export default function Dashboard() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white">{t("dashboard.title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-white">{t("dashboard.title")}</h1>
           <p className="text-gray-400 mt-1">{t("dashboard.subtitle")}</p>
         </div>
         <div className="text-right">
@@ -196,14 +196,14 @@ export default function Dashboard() {
                   <div className="text-right flex-shrink-0">
                     <div className="flex items-center gap-3">
                       <div>
-                        <p className="text-lg font-bold text-green-400">
+                        <p className="text-lg font-bold text-green-400 xs:text-base">
                           {(event.yes_price * 100).toFixed(1)}¢
                         </p>
                         <p className="text-xs text-gray-500">YES</p>
                       </div>
                       <div className="text-gray-600 font-light">/</div>
                       <div>
-                        <p className="text-lg font-bold text-red-400">
+                        <p className="text-lg md:text-base font-bold text-red-400">
                           {(event.no_price * 100).toFixed(1)}¢
                         </p>
                         <p className="text-xs text-gray-500">NO</p>
