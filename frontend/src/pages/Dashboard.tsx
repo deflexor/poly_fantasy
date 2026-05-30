@@ -28,11 +28,26 @@ export default function Dashboard() {
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('volume')
   const [page, setPage] = useState(0)
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
 
   const PAGE_SIZE = 25
 
   useEffect(() => {
     loadEvents()
+    // Poll every 30s for live updates
+    const interval = setInterval(() => {
+      api.listEvents().then(data => {
+        setEvents(data)
+        setLastUpdate(new Date())
+      }).catch(() => {})
+    }, 30000)
+    // Pause polling when tab is hidden
+    const onVisibility = () => { if (document.hidden) clearInterval(interval) }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
   }, [])
 
   async function loadEvents() {
@@ -40,6 +55,7 @@ export default function Dashboard() {
     try {
       const data = await api.listEvents()
       setEvents(data)
+      setLastUpdate(new Date())
     } catch (e) {
       console.error('Failed to load events:', e)
     }
@@ -88,6 +104,12 @@ export default function Dashboard() {
         </div>
         <div className="text-right">
           <p className="text-sm text-gray-400">{events.length} active events</p>
+          {lastUpdate && (
+            <p className="text-xs text-green-500 mt-1 flex items-center gap-1 justify-end">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block animate-pulse" />
+              Live · {lastUpdate.toLocaleTimeString()}
+            </p>
+          )}
         </div>
       </div>
 

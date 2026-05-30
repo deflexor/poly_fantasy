@@ -153,3 +153,24 @@ test.describe('Leaderboard', () => {
     await expect(page.locator('text=ROI')).toBeVisible()
   })
 })
+
+// ─── Live Updates ──────────────────────────────────────
+
+test.describe('Live Updates', () => {
+  test('shows live badge after loading', async ({ page }) => {
+    await page.goto('/')
+    await page.waitForLoadState('domcontentloaded')
+    // Should show "Live" indicator within 35s (poll interval 30s + slack)
+    await expect(page.locator('text=Live').first()).toBeVisible({ timeout: 35000 })
+  })
+})
+
+// ─── Error Toasts ──────────────────────────────────────
+
+test.describe('Error Toasts', () => {
+  test('toast container exists', async ({ page }) => {
+    await page.goto('/')
+    // Toast list container should be rendered (even if empty)
+    await expect(page.locator('.fixed.top-4.right-4')).toBeAttached()
+  })
+})

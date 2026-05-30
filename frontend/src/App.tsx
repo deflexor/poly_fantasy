@@ -6,8 +6,11 @@ import Settings from './pages/Settings'
 import Leaderboard from './pages/Leaderboard'
 import * as api from './lib/api'
 import { generateNickname } from './lib/names'
+import { ToastProvider, useToast, registerGlobalToast } from './lib/toast'
+import ToastList from './components/ToastList'
 
 function AppInner() {
+  const toastCtx = useToast()
   const [user, setUser] = useState(api.getStoredUser())
 
   useEffect(() => {
@@ -34,8 +37,14 @@ function AppInner() {
     autoCreateUser()
   }
 
+  // Register global toast helper
+  useEffect(() => {
+    registerGlobalToast(toastCtx.addToast)
+  }, [])
+
   return (
     <div className="min-h-screen bg-gray-950">
+      <ToastList />
       {/* Nav */}
       <nav className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -79,8 +88,10 @@ function AppInner() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AppInner />
-    </BrowserRouter>
+    <ToastProvider>
+      <BrowserRouter>
+        <AppInner />
+      </BrowserRouter>
+    </ToastProvider>
   )
 }
