@@ -25,8 +25,39 @@ CREATE TABLE profiles (
   username TEXT UNIQUE NOT NULL,
   display_name TEXT,
   balance BIGINT NOT NULL DEFAULT 100000,
+  email TEXT,
+  login_code TEXT,
+  login_code_expires TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Leaderboard view (aggregates bets per user)
+CREATE OR REPLACE VIEW leaderboard AS
+SELECT
+  p.id AS user_id,
+  p.username,
+  p.display_name,
+  p.balance,
+  COALESCE(b.total_bets, 0) AS total_bets,
+  COALESCE(b.wins, 0) AS wins,
+  CASE WHEN COALESCE(b.total_bets, 0) > 0
+    THEN ROUND(COALESCE(b.wins, 0)::numeric / b.total_bets, 4) ELSE 0
+  END AS win_rate,
+  COALESCE(b.profit, 0) AS profit_cents,
+  CASE WHEN p.balance > 0
+    THEN ROUND((COALESCE(b.profit, 0)::numeric / (p.balance - COALESCE(b.profit, 0) + 1)) * 100, 2) ELSE 0
+  END AS roi
+FROM profiles p
+LEFT JOIN (
+  SELECT
+    user_id,
+    COUNT(*) AS total_bets,
+    COUNT(*) FILTER (WHERE status = 'won') AS wins,
+    SUM(CASE WHEN status = 'won' THEN amount_cents * 2 ELSE 0 END) - SUM(amount_cents) AS profit
+  FROM bets
+  GROUP BY user_id
+) b ON p.id = b.user_id
+ORDER BY balance DESC;
 
 CREATE TABLE bets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

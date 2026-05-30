@@ -1,6 +1,6 @@
 # Polymarket Fantasy — Development Plan
 
-**Legend:** ✅ Done · 🔄 In Progress · ⏳ Planned
+**Legend:** ✅ Done · ⏳ Planned
 
 ---
 
@@ -17,77 +17,65 @@
 
 ### Auth & Users
 
-- [x] ✅ **Auto-nickname**: On first visit, generate random name (e.g. `gray-brave-parrot-in-boots`)
-- [x] ✅ **Remove Sign In**: No auth page, no sign-in button. Username shown in navbar
-- [x] ✅ **Settings page**: `/settings` — change nickname
-- [ ] ⏳ **Email login**: Persistent account via email + confirmation code
-- [ ] ⏳ **Profile page**: Show stats (balance, bets placed, win rate)
+- [x] ✅ **Auto-nickname**: On first visit, generate random name
+- [x] ✅ **Remove Sign In**: No auth page, auto-login
+- [x] ✅ **Settings / Profile page**: `/settings` — change nickname, see stats (balance, bets, win rate)
+- [x] ✅ **Email login**: Link email to profile, send/verify code (dev-mode shows code directly)
 
-### Dashboard
+### Dashboard (Events List)
 
-- [x] ✅ **Text search**: Filter events by question text
+- [x] ✅ **Text search**: Filter by question text
 - [x] ✅ **Category filter**: Sports, Politics, Crypto, etc.
-- [ ] ⏳ **Sort options**: By volume, liquidity, spread, end date
-- [ ] ⏳ **Pagination**: For when events exceed viewport
+- [x] ✅ **Sort options**: By volume, end date, price, spread
+- [x] ✅ **Pagination**: 25 events per page with page nav
 - [ ] ⏳ **Live updates**: Auto-refresh or polling for prices
 
 ### Event Detail & Betting
 
-- [x] ✅ **Event page**: Shows question, prices, stats, bet form
-- [x] ✅ **Place bet**: Choose YES/NO, stake play money
-- [x] ✅ **Your bets**: Show user's bets for this event
-- [x] ✅ **Bet resolution**: Auto-resolve when Polymarket settles (sync bot → match winner → update bet status → award winnings)
-- [x] ✅ **RPC function**: `award_winnings()` in Supabase for atomic balance increments
+- [x] ✅ **Event page**: question, prices, stats, bet form
+- [x] ✅ **Place bet**: YES/NO with stake amount
+- [x] ✅ **Your bets**: show user bets per event
+- [x] ✅ **Bet resolution**: sync bot checks resolved events → updates bets → awards winnings via RPC
 
 ### Leaderboard
 
-- [ ] ⏳ **Top players**: Ranked by balance
-- [ ] ⏳ **Stats per player**: Win rate, ROI, total volume bet
-- [ ] ⏳ **Prizes**: Optional — weekly winner shoutout
+- [x] ✅ **SQL view**: `leaderboard` view with balance, total_bets, wins, profit, win_rate, roi
+- [x] ✅ **Frontend page**: table with rankings, profit, balance, bets, win rate, ROI
 
 ### i18n
 
-- [ ] ⏳ **Multi-language**: Russian, English, others
-- [ ] ⏳ **Language toggle**: Switch displayed language
+- [ ] ⏳ **Multi-language**: Russian, English support
+- [ ] ⏳ **Language toggle**
 
 ---
 
 ## Infrastructure
 
 - [x] ✅ **Cron sync**: `*/15 * * * *` — Rust binary syncs events + resolves bets
-- [x] ✅ **Rust sync bot**: Fetches Gamma API, upserts to Supabase REST, resolves bets
-- [ ] ⏳ **Email sending**: For email login codes
-- [ ] ⏳ **Custom domain**: Move from `poly-fantasy.vercel.app` to own domain
+- [x] ✅ **Rust sync bot**: Fetches Gamma API, upserts to Supabase REST
+- [ ] ⏳ **Email sending**: Integrate email provider (Resend / SendGrid free tier)
+- [ ] ⏳ **Custom domain**
 
 ---
 
 ## Testing
 
-- [x] ✅ **Rust integration tests**: CRUD for events/profiles/bets, resolve YES/NO wins (4/5 pass, 1 flaky due to host network)
-- [x] ✅ **Frontend E2E tests**: Playwright — auth, dashboard, search, navigation, no broken links
-- [ ] ⏳ **CI pipeline**: Run tests on push
-
----
-
-## Polish
-
-- [ ] ⏳ **Loading states**: Better UX during data fetch
-- [ ] ⏳ **Error handling**: Toast/snackbar for errors
-- [ ] ⏳ **Mobile responsive**: Optimise for phones
-- [ ] ⏳ **PWA / install prompt**: Optional mobile app feel
+- [x] ✅ **Rust integration tests**: CRUD events/profiles/bets, resolve YES/NO wins
+- [x] ✅ **Frontend E2E tests**: Playwright — auth, dashboard, search, sort, pagination, betting, leaderboard, settings
+- [x] ✅ **CI pipeline**: GitHub Actions — Rust tests + frontend build + Playwright (needs Supabase secrets)
 
 ---
 
 ## Backlog
 
-- [ ] ⏳ **Email login**: Persistent account via email + confirmation code
-- [ ] ⏳ **Profile page**: Show stats (balance, bets placed, win rate)
-- [ ] ⏳ **Dashboard sorting**: By volume, liquidity, spread, end date
-- [ ] ⏳ **Pagination**: For when events exceed viewport
-- [ ] ⏳ **Live updates**: Auto-refresh or polling for prices
-- [ ] ⏳ **Leaderboard**: Top players ranked by balance, win rate, ROI
-- [ ] ⏳ **i18n**: Multi-language (Russian, English)
-- [ ] ⏳ **Notifications**: Telegram bot for event resolution
-- [ ] ⏳ **Referral links**: Share with friends, track who joined
-- [ ] ⏳ **Custom domain**: Move from Vercel subdomain to own domain
-- [ ] ⏳ **Prizes**: Optional weekly winner shoutout
+- [ ] ⏳ **Live updates / polling**
+- [ ] ⏳ **i18n (multi-language)**
+- [ ] ⏳ **Email sending (production)**
+- [ ] ⏳ **Error toasts / snackbars**
+- [ ] ⏳ **Mobile responsive**
+- [ ] ⏳ **PWA / install prompt**
+- [ ] ⏳ **Custom domain**
+- [ ] ⏳ **Notifications (Telegram bot)**
+- [ ] ⏳ **Betting pools (show counts)**
+- [ ] ⏳ **Referral links**
+- [ ] ⏳ **Prizes / weekly winner**

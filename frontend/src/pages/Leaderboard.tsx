@@ -65,7 +65,7 @@ export default function Leaderboard() {
                   <td className={`px-5 py-3 text-right text-sm font-medium ${
                     entry.roi >= 0 ? 'text-green-400' : 'text-red-400'
                   }`}>
-                    {entry.roi >= 0 ? '+' : ''}{(entry.roi * 100).toFixed(1)}%
+                    {entry.roi >= 0 ? '+' : ''}{entry.roi.toFixed(1)}%
                   </td>
                 </tr>
               ))}

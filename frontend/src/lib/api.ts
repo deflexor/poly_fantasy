@@ -48,6 +48,7 @@ export interface Profile {
   username: string
   display_name: string | null
   balance: number
+  email?: string | null
 }
 
 export interface Bet {
@@ -136,7 +137,6 @@ export async function getUserBets(userId: string): Promise<Bet[]> {
   return get<Bet[]>(`bets?user_id=eq.${userId}&order=created_at.desc`)
 }
 
-// Leaderboard (will need a view for this)
 export type LeaderEntry = {
   display_name?: string
   roi: number
@@ -145,19 +145,46 @@ export type LeaderEntry = {
   profit_cents: number
   balance: number
   total_bets: number
+  wins: number
   win_rate: number
 }
 
-export async function getLeaderboard(): Promise<LeaderEntry[]> {
-  // Simple version for now - just list users with balances
-  return get<LeaderEntry[]>('leaderboard?order=balance.desc&limit=50')
+export async function getLeaderboard(limit = 50): Promise<LeaderEntry[]> {
+  return get<LeaderEntry[]>(`leaderboard?order=balance.desc&limit=${limit}`)
 }
 
-export async function updateProfile(id: string, data: { username?: string }): Promise<void> {
+export async function updateProfile(id: string, data: { username?: string; email?: string }): Promise<void> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${id}`, {
     method: 'PATCH',
     headers: { ...headers, Prefer: 'return=minimal' },
     body: JSON.stringify(data),
   })
   if (!res.ok) throw new Error(await res.text().catch(() => 'Update failed'))
+}
+
+/** Request a login code (dev mode: returns the code directly) */
+export async function requestLoginCode(email: string): Promise<string> {
+  const code = Math.floor(100000 + Math.random() * 900000).toString()
+  // Find profile with this email
+  const existing = await get<Profile[]>(`profiles?email=eq.${encodeURIComponent(email)}&limit=1`)
+  if (existing.length > 0) {
+    // Update existing profile's login code
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${existing[0].id}`, {
+      method: 'PATCH',
+      headers: { ...headers, Prefer: 'return=minimal' },
+      body: JSON.stringify({ login_code: code, login_code_expires: new Date(Date.now() + 10 * 60000).toISOString() }),
+    })
+    if (!res.ok) throw new Error('Failed to save code')
+  }
+  return code
+}
+
+export async function verifyLoginCode(email: string, code: string): Promise<{ ok: boolean; user: { id: string; username: string } }> {
+  const profiles = await get<Profile[]>(`profiles?email=eq.${encodeURIComponent(email)}&select=id,username,login_code,login_code_expires&limit=1`)
+  if (!profiles.length) return { ok: false, user: { id: '', username: '' } }
+  const p = profiles[0] as any
+  if (p.login_code !== code) return { ok: false, user: { id: '', username: '' } }
+  // Check expiry
+  if (p.login_code_expires && new Date(p.login_code_expires) < new Date()) return { ok: false, user: { id: '', username: '' } }
+  return { ok: true, user: { id: p.id, username: p.username } }
 }
