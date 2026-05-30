@@ -1,8 +1,10 @@
+import { useLocale } from '../lib/locale'
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import * as api from '../lib/api'
 
 export default function EventDetail() {
+  const { t } = useLocale()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [event, setEvent] = useState<api.Event | null>(null)
@@ -72,7 +74,7 @@ export default function EventDetail() {
         onClick={() => navigate(-1)}
         className="text-gray-500 hover:text-white text-sm mb-4 transition"
       >
-        ← Back
+        {t('event.detail.back')}
       </button>
 
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
@@ -137,12 +139,12 @@ export default function EventDetail() {
         {/* Betting */}
         {isResolved ? (
           <div className="bg-yellow-900/30 border border-yellow-700/50 rounded-xl p-4 text-center">
-            <p className="text-yellow-400 font-semibold">Event Resolved</p>
-            {event.winner && <p className="text-yellow-300 text-sm mt-1">Winner: {event.winner}</p>}
+            <p className="text-yellow-400 font-semibold">{t('event.detail.resolved')}</p>
+            {event.winner && <p className="text-yellow-300 text-sm mt-1">{t('event.detail.winner')}: {event.winner}</p>}
           </div>
         ) : user ? (
           <div className="border-t border-gray-800 pt-6">
-            <h3 className="text-white font-semibold mb-4">Place Your Bet</h3>
+            <h3 className="text-white font-semibold mb-4">{t('bet.place')}</h3>
             <div className="flex gap-3 mb-4">
               <button
                 onClick={() => setSelectedSide('YES')}
@@ -196,7 +198,7 @@ export default function EventDetail() {
         {/* User's bets */}
         {userBets.length > 0 && (
           <div className="border-t border-gray-800 pt-6 mt-6">
-            <h3 className="text-white font-semibold mb-3">Your Bets</h3>
+            <h3 className="text-white font-semibold mb-3">{t('bet.your_bets')}</h3>
             <div className="space-y-2">
               {userBets.map(bet => (
                 <div key={bet.id} className="bg-gray-800 rounded-lg px-4 py-3 flex items-center justify-between">

@@ -1,3 +1,4 @@
+import { useLocale } from '../lib/locale'
 import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import * as api from '../lib/api'
@@ -22,6 +23,7 @@ function qualityBadge(q: string | null): string {
 type SortKey = 'volume' | 'end_date' | 'yes_price' | 'spread'
 
 export default function Dashboard() {
+  const { t } = useLocale()
   const [events, setEvents] = useState<api.Event[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -99,15 +101,15 @@ export default function Dashboard() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white">Polymarket Fantasy</h1>
-          <p className="text-gray-400 mt-1">Predict events with play money. Compete with friends.</p>
+          <h1 className="text-3xl font-bold text-white">{t("dashboard.title")}</h1>
+          <p className="text-gray-400 mt-1">{t("dashboard.subtitle")}</p>
         </div>
         <div className="text-right">
-          <p className="text-sm text-gray-400">{events.length} active events</p>
+          <p className="text-sm text-gray-400">{events.length} {t("dashboard.active_events")}</p>
           {lastUpdate && (
             <p className="text-xs text-green-500 mt-1 flex items-center gap-1 justify-end">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block animate-pulse" />
-              Live · {lastUpdate.toLocaleTimeString()}
+              {t("dashboard.live")} · {lastUpdate.toLocaleTimeString()}
             </p>
           )}
         </div>
@@ -117,7 +119,7 @@ export default function Dashboard() {
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Search events…"
+          placeholder={t("dashboard.search")}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full bg-gray-900 border border-gray-800 rounded-xl px-5 py-3 text-white text-sm outline-none focus:border-purple-500 transition"
@@ -149,8 +151,8 @@ export default function Dashboard() {
 
       {/* Sort */}
       <div className="flex gap-2 mb-4 text-sm">
-        <span className="text-gray-500 self-center mr-1">Sort:</span>
-        {([['volume', 'Volume'], ['end_date', 'End Date'], ['yes_price', 'Price'], ['spread', 'Spread']] as [SortKey, string][]).map(([key, label]) => (
+        <span className="text-gray-500 self-center mr-1">{t("dashboard.sort")}</span>
+        {([['volume', t('dashboard.sort_volume')], ['end_date', t('dashboard.sort_end_date')], ['yes_price', t('dashboard.sort_price')], ['spread', t('dashboard.sort_spread')]] as [SortKey, string][]).map(([key, label]) => (
           <button
             key={key}
             onClick={() => setSortKey(key)}
@@ -216,7 +218,7 @@ export default function Dashboard() {
               </Link>
             ))}
             {pageEvents.length === 0 && (
-              <p className="text-center text-gray-500 py-12">No events found.</p>
+              <p className="text-center text-gray-500 py-12">{t('dashboard.no_events')}</p>
             )}
           </div>
 
@@ -228,7 +230,7 @@ export default function Dashboard() {
                 disabled={page === 0}
                 className="px-3 py-1.5 rounded-lg text-sm bg-gray-800 text-gray-400 hover:bg-gray-700 disabled:opacity-30 transition"
               >
-                ← Prev
+                {t("dashboard.prev")}
               </button>
               {Array.from({ length: pageCount }, (_, i) => (
                 <button
@@ -246,7 +248,7 @@ export default function Dashboard() {
                 disabled={page >= pageCount - 1}
                 className="px-3 py-1.5 rounded-lg text-sm bg-gray-800 text-gray-400 hover:bg-gray-700 disabled:opacity-30 transition"
               >
-                Next →
+                {t("dashboard.next")}
               </button>
             </div>
           )}

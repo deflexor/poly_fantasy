@@ -8,9 +8,11 @@ import * as api from './lib/api'
 import { generateNickname } from './lib/names'
 import { ToastProvider, useToast, registerGlobalToast } from './lib/toast'
 import ToastList from './components/ToastList'
+import { LocaleProvider, useLocale } from './lib/locale'
 
 function AppInner() {
   const toastCtx = useToast()
+  const { t, locale, setLocale, locales } = useLocale()
   const [user, setUser] = useState(api.getStoredUser())
 
   useEffect(() => {
@@ -55,7 +57,21 @@ function AppInner() {
             <Link to="/" className="text-gray-400 hover:text-white text-sm transition">Events</Link>
             <Link to="/leaderboard" className="text-gray-400 hover:text-white text-sm transition">Leaderboard</Link>
           </div>
-          <div>
+          <div className="flex items-center gap-2">
+            {/* Language switcher */}
+            <div className="flex gap-0.5 mr-2 border border-gray-800 rounded-lg overflow-hidden text-xs">
+              {locales.map(l => (
+                <button
+                  key={l.code}
+                  onClick={() => setLocale(l.code)}
+                  className={`px-2 py-1 transition ${
+                    locale === l.code ? 'bg-purple-700 text-white' : 'bg-gray-800 text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
             {user ? (
               <div className="flex items-center gap-3">
                 <Link to="/settings" className="text-sm text-gray-400 hover:text-white transition">
@@ -65,7 +81,7 @@ function AppInner() {
                   onClick={handleSignOut}
                   className="text-sm text-gray-500 hover:text-white transition"
                 >
-                  Reset
+                  {t('nav.reset')}
                 </button>
               </div>
             ) : (
@@ -89,9 +105,11 @@ function AppInner() {
 export default function App() {
   return (
     <ToastProvider>
-      <BrowserRouter>
-        <AppInner />
-      </BrowserRouter>
+      <LocaleProvider>
+        <BrowserRouter>
+          <AppInner />
+        </BrowserRouter>
+      </LocaleProvider>
     </ToastProvider>
   )
 }

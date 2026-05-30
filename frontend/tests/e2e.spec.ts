@@ -174,3 +174,31 @@ test.describe('Error Toasts', () => {
     await expect(page.locator('.fixed.top-4.right-4')).toBeAttached()
   })
 })
+
+// ─── i18n ────────────────────────────────────────────────
+
+test.describe('i18n', () => {
+  test('shows English and Russian buttons', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.locator('button:has-text("English")')).toBeVisible()
+    await expect(page.locator('button:has-text("Русский")')).toBeVisible()
+  })
+
+  test('switching to Russian changes UI text', async ({ page }) => {
+    await page.goto('/')
+    await page.locator('button:has-text("Русский")').click()
+    await page.waitForTimeout(300)
+    // Nav should show Russian text
+    await expect(page.locator('text=События').first()).toBeVisible()
+    await expect(page.locator('text=Лидерборд').first()).toBeVisible()
+  })
+
+  test('switching back to English works', async ({ page }) => {
+    await page.goto('/')
+    await page.locator('button:has-text("Русский")').click()
+    await page.waitForTimeout(200)
+    await page.locator('button:has-text("English")').click()
+    await page.waitForTimeout(200)
+    await expect(page.locator('text=Events').first()).toBeVisible()
+  })
+})

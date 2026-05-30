@@ -1,8 +1,10 @@
+import { useLocale } from '../lib/locale'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as api from '../lib/api'
 
 export default function Settings() {
+  const { t } = useLocale()
   const stored = api.getStoredUser()
   const navigate = useNavigate()
   const [newName, setNewName] = useState(stored ? stored.username : '')
@@ -83,33 +85,33 @@ export default function Settings() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-12">
-      <h1 className="text-2xl font-bold text-white mb-1">Profile</h1>
+      <h1 className="text-2xl font-bold text-white mb-1">{t('profile.title')}</h1>
       <p className="text-gray-400 text-sm mb-6">Your stats and settings</p>
 
       {/* Stats card */}
       {profile && (
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-4">
-          <h2 className="text-white font-semibold mb-3">Stats</h2>
+          <h2 className="text-white font-semibold mb-3">{t('profile.stats')}</h2>
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="bg-gray-800 rounded-xl p-3">
               <p className="text-2xl font-bold text-green-400">${(profile.balance / 100).toFixed(2)}</p>
-              <p className="text-xs text-gray-400 mt-1">Balance</p>
+              <p className="text-xs text-gray-400 mt-1">{t('profile.balance')}</p>
             </div>
             <div className="bg-gray-800 rounded-xl p-3">
               <p className="text-2xl font-bold text-white">{bets.length}</p>
-              <p className="text-xs text-gray-400 mt-1">Total Bets</p>
+              <p className="text-xs text-gray-400 mt-1">{t('profile.total_bets')}</p>
             </div>
             <div className="bg-gray-800 rounded-xl p-3">
               <p className="text-2xl font-bold text-purple-400">
                 {bets.length > 0 ? ((wins / bets.length) * 100).toFixed(0) : 0}%
               </p>
-              <p className="text-xs text-gray-400 mt-1">Win Rate</p>
+              <p className="text-xs text-gray-400 mt-1">{t('profile.win_rate')}</p>
             </div>
           </div>
           <div className="flex gap-3 mt-3 text-sm">
-            <span className="text-green-400">{wins} won</span>
-            <span className="text-red-400">{losses} lost</span>
-            <span className="text-gray-500">{pending} pending</span>
+            <span className="text-green-400">{wins} {t('profile.won')}</span>
+            <span className="text-red-400">{losses} {t('profile.lost')}</span>
+            <span className="text-gray-500">{pending} {t('profile.pending')}</span>
           </div>
         </div>
       )}

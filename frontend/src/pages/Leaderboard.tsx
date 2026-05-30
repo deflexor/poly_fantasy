@@ -1,7 +1,9 @@
+import { useLocale } from '../lib/locale'
 import { useEffect, useState } from 'react'
 import * as api from '../lib/api'
 
 export default function Leaderboard() {
+  const { t } = useLocale()
   const [entries, setEntries] = useState<api.LeaderEntry[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -14,8 +16,8 @@ export default function Leaderboard() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-white mb-2">Leaderboard</h1>
-      <p className="text-gray-400 mb-8">Top predictors by profit</p>
+      <h1 className="text-3xl font-bold text-white mb-2">{t('lb.title')}</h1>
+      <p className="text-gray-400 mb-8">{t('lb.subtitle')}</p>
 
       {loading ? (
         <div className="text-center py-20">
@@ -27,13 +29,13 @@ export default function Leaderboard() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-800 text-left text-sm text-gray-500">
-                <th className="px-5 py-3 font-medium">#</th>
-                <th className="px-5 py-3 font-medium">Player</th>
-                <th className="px-5 py-3 font-medium text-right">Profit</th>
-                <th className="px-5 py-3 font-medium text-right">Balance</th>
-                <th className="px-5 py-3 font-medium text-right">Bets</th>
-                <th className="px-5 py-3 font-medium text-right">Win Rate</th>
-                <th className="px-5 py-3 font-medium text-right">ROI</th>
+                <th className="px-5 py-3 font-medium">{t('lb.rank')}</th>
+                <th className="px-5 py-3 font-medium">{t('lb.player')}</th>
+                <th className="px-5 py-3 font-medium text-right">{t('lb.profit')}</th>
+                <th className="px-5 py-3 font-medium text-right">{t('lb.balance')}</th>
+                <th className="px-5 py-3 font-medium text-right">{t('lb.bets')}</th>
+                <th className="px-5 py-3 font-medium text-right">{t('lb.win_rate')}</th>
+                <th className="px-5 py-3 font-medium text-right">{t('lb.roi')}</th>
               </tr>
             </thead>
             <tbody>
@@ -72,7 +74,7 @@ export default function Leaderboard() {
               {entries.length === 0 && (
                 <tr>
                   <td colSpan={7} className="text-center text-gray-500 py-12">
-                    No bets yet — be the first!
+                    {t('lb.empty')}
                   </td>
                 </tr>
               )}
