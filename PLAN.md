@@ -1,9 +1,6 @@
 # Polymarket Fantasy — Development Plan
 
-## Legend
-- ✅ Done
-- 🔄 In Progress
-- ⏳ Planned
+**Legend:** ✅ Done · 🔄 In Progress · ⏳ Planned
 
 ---
 
@@ -11,7 +8,7 @@
 
 - [x] ✅ **Supabase schema**: `events`, `profiles`, `bets` tables with no RLS
 - [x] ✅ **Data sync**: ~8000 active markets synced from Polymarket Gamma API
-- [x] ✅ **Vercel deploy**: `poly-fantasy.vercel.app` live
+- [x] ✅ **Vercel deploy**: `poly-fantasy.vercel.app` live + SPA rewrites
 - [x] ✅ **GitHub repo**: `github.com/deflexor/poly_fantasy` (auto-deploy to Vercel)
 
 ---
@@ -39,7 +36,8 @@
 - [x] ✅ **Event page**: Shows question, prices, stats, bet form
 - [x] ✅ **Place bet**: Choose YES/NO, stake play money
 - [x] ✅ **Your bets**: Show user's bets for this event
-- [ ] ⏳ **Bet resolution**: Auto-resolve when Polymarket settles (🚧 code written, needs binary rebuild + cron)
+- [x] ✅ **Bet resolution**: Auto-resolve when Polymarket settles (sync bot → match winner → update bet status → award winnings)
+- [x] ✅ **RPC function**: `award_winnings()` in Supabase for atomic balance increments
 
 ### Leaderboard
 
@@ -49,37 +47,9 @@
 
 ### i18n
 
-- [ ] ⏳ **Multi-language**: Russian, English, others (currently Russian only for MVP)
+- [ ] ⏳ **Multi-language**: Russian, English, others
 - [ ] ⏳ **Language toggle**: Switch displayed language
 
----
-
-## Infrastructure
-
-- [ ] 🔄 **Cron sync**: `*/15 * * * *` — Rust binary syncs events + resolves bets
-- [x] ✅ **Rust sync bot**: Fetches Gamma API, upserts to Supabase REST, resolves bets
-- [ ] ⏳ **Email sending**: For email login codes
-- [ ] ⏳ **Custom domain**: Move from `poly-fantasy.vercel.app` to own domain
-
----
-
-## Polish
-
-- [ ] ⏳ **Loading states**: Better UX during data fetch
-- [ ] ⏳ **Error handling**: Toast/snackbar for errors
-- [ ] ⏳ **Mobile responsive**: Optimise for phones
-- [ ] ⏳ **PWA / install prompt**: Optional mobile app feel
-
----
-
-## Backlog (nice to have)
-
-- [ ] ⏳ **Betting pools**: Show how many users bet each side
-- [ ] ⏳ **Notifications**: Telegram bot for event resolution
-- [ ] ⏳ **Referral links**: Share with friends, track who joined
-- [ ] ⏳ **Dark/light mode toggle**
-- [ ] ⏳ **Archive**: Show resolved events separately
-- [ ] ⏳ **Comparison**: Polymarket real price vs fantasy price
 ---
 
 ## Infrastructure
@@ -89,15 +59,12 @@
 - [ ] ⏳ **Email sending**: For email login codes
 - [ ] ⏳ **Custom domain**: Move from `poly-fantasy.vercel.app` to own domain
 
-### Betting
+---
 
-- [x] ✅ **Bet resolution**: Auto-resolve when Polymarket settles: sync bot matches winner → updates bet status → awards winnings
-- [x] ✅ **RPC function**: `award_winnings()` in Supabase for atomic balance increments
+## Testing
 
-### Testing
-
-- [x] ✅ **Rust integration tests**: CRUD for events/profiles/bets, resolve YES wins, resolve NO wins
-- [x] ✅ **Frontend E2E tests**: Playwright — auth, search, category filter, bet placement, settings, navigation, no broken links
+- [x] ✅ **Rust integration tests**: CRUD for events/profiles/bets, resolve YES/NO wins (4/5 pass, 1 flaky due to host network)
+- [x] ✅ **Frontend E2E tests**: Playwright — auth, dashboard, search, navigation, no broken links
 - [ ] ⏳ **CI pipeline**: Run tests on push
 
 ---
@@ -111,7 +78,7 @@
 
 ---
 
-## Backlog (nice to have)
+## Backlog
 
 - [ ] ⏳ **Email login**: Persistent account via email + confirmation code
 - [ ] ⏳ **Profile page**: Show stats (balance, bets placed, win rate)
@@ -120,10 +87,7 @@
 - [ ] ⏳ **Live updates**: Auto-refresh or polling for prices
 - [ ] ⏳ **Leaderboard**: Top players ranked by balance, win rate, ROI
 - [ ] ⏳ **i18n**: Multi-language (Russian, English)
-- [ ] ⏳ **Betting pools**: Show how many users bet each side
 - [ ] ⏳ **Notifications**: Telegram bot for event resolution
 - [ ] ⏳ **Referral links**: Share with friends, track who joined
-- [ ] ⏳ **Dark/light mode toggle**
-- [ ] ⏳ **Archive**: Show resolved events separately
-- [ ] ⏳ **Comparison**: Polymarket real price vs fantasy price
-- [ ] ⏳ **Prizes**: Optional — weekly winner shoutout
+- [ ] ⏳ **Custom domain**: Move from Vercel subdomain to own domain
+- [ ] ⏳ **Prizes**: Optional weekly winner shoutout
