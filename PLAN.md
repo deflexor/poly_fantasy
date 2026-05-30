@@ -17,65 +17,58 @@
 
 ### Auth & Users
 
-- [x] ✅ **Auto-nickname**: On first visit, generate random name
-- [x] ✅ **Remove Sign In**: No auth page, auto-login
-- [x] ✅ **Settings / Profile page**: `/settings` — change nickname, see stats (balance, bets, win rate)
-- [x] ✅ **Email login**: Link email to profile, send/verify code (dev-mode shows code directly)
+- [x] ✅ **Auto-nickname**: random name on first visit
+- [x] ✅ **Remove Sign In**: auto-login
+- [x] ✅ **Settings / Profile**: change nickname, stats (balance, bets, win rate)
+- [x] ✅ **Email login**: email field + code verification
 
-### Dashboard (Events List)
+### Dashboard
 
-- [x] ✅ **Text search**: Filter by question text
-- [x] ✅ **Category filter**: Sports, Politics, Crypto, etc.
-- [x] ✅ **Sort options**: By volume, end date, price, spread
-- [x] ✅ **Pagination**: 25 events per page with page nav
-- [ ] ⏳ **Live updates**: Auto-refresh or polling for prices
+- [x] ✅ **Text search**
+- [x] ✅ **Category filter**: Sports, Politics, Crypto
+- [x] ✅ **Sort**: Volume, End Date, Price, Spread
+- [x] ✅ **Pagination**: 25 per page
+- [x] ✅ **Live updates**: polling every 30s + "Live" badge
 
 ### Event Detail & Betting
 
-- [x] ✅ **Event page**: question, prices, stats, bet form
-- [x] ✅ **Place bet**: YES/NO with stake amount
-- [x] ✅ **Your bets**: show user bets per event
-- [x] ✅ **Bet resolution**: sync bot checks resolved events → updates bets → awards winnings via RPC
+- [x] ✅ **Event page**: prices, stats, bet form
+- [x] ✅ **Place bet**: YES/NO with stake
+- [x] ✅ **Your bets**: per event
+- [x] ✅ **Bet resolution**: sync bot resolves + awards winnings
+- [x] ✅ **Bet pool**: shows YES/NO bet counts
 
 ### Leaderboard
 
-- [x] ✅ **SQL view**: `leaderboard` view with balance, total_bets, wins, profit, win_rate, roi
-- [x] ✅ **Frontend page**: table with rankings, profit, balance, bets, win rate, ROI
+- [x] ✅ **SQL view**: balance, bets, profit, win rate, ROI
+- [x] ✅ **Frontend table**: ranked players
 
 ### i18n
 
-- [ ] ⏳ **Multi-language**: Russian, English support
-- [ ] ⏳ **Language toggle**
+- [x] ✅ **English + Russian**: 80+ translation keys
+- [x] ✅ **Language switcher**: nav bar toggle
+
+### Testing
+
+- [x] ✅ **Rust integration tests**: CRUD + resolve logic
+- [x] ✅ **Frontend E2E tests**: auth, dashboard, search, sort, pagination, betting, leaderboard, live, i18n, navigation
+- [x] ✅ **CI pipeline**: GitHub Actions workflow
+
+### Infrastructure
+
+- [x] ✅ **Cron sync**: `*/15 * * * *` — events + resolve bets
+- [x] ✅ **Rust sync bot**: Gamma API → Supabase REST
+- [x] ✅ **Error toasts**: ToastProvider + global helper
+- [x] ✅ **Mobile responsive**: scrollable tables, responsive grid
+- [x] ✅ **PWA**: manifest + icons + install prompt
 
 ---
 
-## Infrastructure
+## Backlog (future)
 
-- [x] ✅ **Cron sync**: `*/15 * * * *` — Rust binary syncs events + resolves bets
-- [x] ✅ **Rust sync bot**: Fetches Gamma API, upserts to Supabase REST
-- [ ] ⏳ **Email sending**: Integrate email provider (Resend / SendGrid free tier)
+- [ ] ⏳ **Email sending**: Integrate Resend/SendGrid for actual email dispatch
+- [ ] ⏳ **Telegram notifications**: event resolution alerts
+- [ ] ⏳ **Referral links**: share with friends
+- [ ] ⏳ **Prizes**: weekly winner
 - [ ] ⏳ **Custom domain**
-
----
-
-## Testing
-
-- [x] ✅ **Rust integration tests**: CRUD events/profiles/bets, resolve YES/NO wins
-- [x] ✅ **Frontend E2E tests**: Playwright — auth, dashboard, search, sort, pagination, betting, leaderboard, settings
-- [x] ✅ **CI pipeline**: GitHub Actions — Rust tests + frontend build + Playwright (needs Supabase secrets)
-
----
-
-## Backlog
-
-- [ ] ⏳ **Live updates / polling**
-- [ ] ⏳ **i18n (multi-language)**
-- [ ] ⏳ **Email sending (production)**
-- [ ] ⏳ **Error toasts / snackbars**
-- [ ] ⏳ **Mobile responsive**
-- [ ] ⏳ **PWA / install prompt**
-- [ ] ⏳ **Custom domain**
-- [ ] ⏳ **Notifications (Telegram bot)**
-- [ ] ⏳ **Betting pools (show counts)**
-- [ ] ⏳ **Referral links**
-- [ ] ⏳ **Prizes / weekly winner**
+- [ ] ⏳ **Dark/light mode toggle**
